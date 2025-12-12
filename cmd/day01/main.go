@@ -31,24 +31,34 @@ func main() {
 			panic(err)
 		}
 
+		// Count how many times we pass through or land on 0 during this rotation
+		var zerosInRotation int
 		if direction == 'R' {
+			// For right rotations: count how many times we wrap past 99->0
+			zerosInRotation = (position + distance) / 100
 			position = (position + distance) % 100
 		} else { // 'L'
+			// For left rotations: count how many times we wrap past 0->99
+			if position == 0 {
+				zerosInRotation = distance / 100
+			} else if distance >= position {
+				zerosInRotation = 1 + (distance-position)/100
+			} else { // distance < position
+				zerosInRotation = 0
+			}
 			position = (position - distance) % 100
 			if position < 0 {
 				position += 100
 			}
 		}
 
-		if position == 0 {
-			zeroCount++
-		}
+		zeroCount += zerosInRotation
 	}
 
 	if err := scanner.Err(); err != nil {
 		panic(err)
 	}
 
-	fmt.Println("Password (times dial points at 0):", zeroCount)
+	fmt.Println("Password (method 0x434C49434B):", zeroCount)
 }
 
