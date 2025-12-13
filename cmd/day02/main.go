@@ -26,8 +26,8 @@ func main() {
 		panic(err)
 	}
 
-	// Generate all possible invalid IDs (pattern repeated twice)
-	// These are numbers like 11, 22, 6464, 123123, etc.
+	// Generate all possible invalid IDs (pattern repeated at least twice)
+	// These are numbers like 11, 111, 1111, 6464, 646464, 123123, 123123123, etc.
 	invalidIDs := generateInvalidIDs()
 
 	// Parse ranges and find invalid IDs within each range
@@ -51,7 +51,7 @@ func main() {
 		}
 
 		// Find all invalid IDs in this range
-		for _, id := range invalidIDs {
+		for id := range invalidIDs {
 			if id >= start && id <= end {
 				totalSum += id
 			}
@@ -61,29 +61,37 @@ func main() {
 	fmt.Println("Sum of all invalid IDs:", totalSum)
 }
 
-// generateInvalidIDs generates all numbers that are a pattern repeated twice
-// For example: 11 (1 repeated), 6464 (64 repeated), 123123 (123 repeated)
-func generateInvalidIDs() []int64 {
-	var result []int64
+// generateInvalidIDs generates all numbers that are a pattern repeated at least twice
+// For example: 11, 111, 1111 (1 repeated 2, 3, 4 times), 6464, 646464 (64 repeated 2, 3 times), etc.
+func generateInvalidIDs() map[int64]bool {
+	result := make(map[int64]bool)
 
 	// Generate patterns of 1 to 5 digits
-	// When repeated, this gives numbers with 2 to 10 digits
-	// This covers the range needed for our input (up to ~10 billion)
-	for digits := 1; digits <= 5; digits++ {
+	// Maximum total digits we need is 10 (for numbers up to ~10 billion)
+	for patternLen := 1; patternLen <= 5; patternLen++ {
 		// Calculate the range of patterns for this digit count
 		// 1 digit: 1-9, 2 digits: 10-99, 3 digits: 100-999, etc.
-		start := int64(1)
-		for i := 1; i < digits; i++ {
-			start *= 10
+		patternStart := int64(1)
+		for i := 1; i < patternLen; i++ {
+			patternStart *= 10
 		}
-		end := start*10 - 1
+		patternEnd := patternStart*10 - 1
 
-		for pattern := start; pattern <= end; pattern++ {
-			// Create the repeated number by concatenating the pattern with itself
-			s := strconv.FormatInt(pattern, 10)
-			repeated := s + s
-			id, _ := strconv.ParseInt(repeated, 10, 64)
-			result = append(result, id)
+		// Maximum repetitions: 10 / patternLen (since max total digits is 10)
+		maxRepetitions := 10 / patternLen
+
+		for pattern := patternStart; pattern <= patternEnd; pattern++ {
+			patternStr := strconv.FormatInt(pattern, 10)
+
+			// Repeat the pattern 2 or more times
+			for reps := 2; reps <= maxRepetitions; reps++ {
+				var repeated strings.Builder
+				for r := 0; r < reps; r++ {
+					repeated.WriteString(patternStr)
+				}
+				id, _ := strconv.ParseInt(repeated.String(), 10, 64)
+				result[id] = true // Use map to avoid duplicates (e.g., 1111 = "1"×4 = "11"×2)
+			}
 		}
 	}
 
